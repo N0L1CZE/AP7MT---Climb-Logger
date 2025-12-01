@@ -6,7 +6,10 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "sessions")
 data class ClimbSession(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val date: String,          // např. "2025-11-27"
-    val locationName: String,  // název stěny/oblasti
-    val isOutdoor: Boolean
+    val title: String,
+    val date: String,
+    val durationMinutes: Int?,
+    val notes: String?,
+    val photoUri: String?,
+    val locationName: String?
 )

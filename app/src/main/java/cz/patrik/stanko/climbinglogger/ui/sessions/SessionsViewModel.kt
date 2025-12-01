@@ -2,23 +2,42 @@ package cz.patrik.stanko.climbinglogger.ui.sessions
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cz.patrik.stanko.climbinglogger.data.ClimbingRepository
 import cz.patrik.stanko.climbinglogger.data.ServiceLocator
 import cz.patrik.stanko.climbinglogger.data.local.ClimbSession
-import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+data class SessionsUiState(
+    val sessions: List<ClimbSession> = emptyList(),
+    val filterQuery: String = ""
+)
+
 class SessionsViewModel : ViewModel() {
-    private val repository = ServiceLocator.repository
 
-    val sessions: StateFlow<List<ClimbSession>> =
-        repository.getSessions()
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    private val repository: ClimbingRepository = ServiceLocator.repository
 
-    fun addSession(date: String, location: String, isOutdoor: Boolean) {
+    private val _uiState = MutableStateFlow(SessionsUiState())
+    val uiState: StateFlow<SessionsUiState> = _uiState.asStateFlow()
+
+    init {
         viewModelScope.launch {
-            repository.addSession(date, location, isOutdoor)
+            repository.getSessions().collect { list ->
+                _uiState.update { it.copy(sessions = list) }
+            }
+        }
+    }
+
+    fun onFilterChange(query: String) {
+        _uiState.update { it.copy(filterQuery = query) }
+    }
+
+    fun deleteSession(session: ClimbSession) {
+        viewModelScope.launch {
+            repository.deleteSession(session)
         }
     }
 }

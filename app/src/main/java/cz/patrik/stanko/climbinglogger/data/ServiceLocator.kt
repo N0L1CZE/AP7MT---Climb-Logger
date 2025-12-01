@@ -13,29 +13,24 @@ import okhttp3.Response
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 
-/**
- * ServiceLocator – inicializuje Room DB a Retrofit pro TrailAPI (RapidAPI).
- */
 object ServiceLocator {
 
-    // Base URL TrailAPI na RapidAPI
     private const val BASE_URL = "https://trailapi-trailapi.p.rapidapi.com/"
 
     lateinit var repository: ClimbingRepository
         private set
 
     fun init(context: Context) {
-        // inicializace jen jednou
         if (::repository.isInitialized) return
 
-        // ---------- Room databáze ----------
         val db = Room.databaseBuilder(
             context.applicationContext,
             ClimbDatabase::class.java,
             "climb_logger.db"
-        ).build()
+        )
+            .fallbackToDestructiveMigration()
+            .build()
 
-        // ---------- OkHttp + RapidAPI hlavičky ----------
         val rapidApiInterceptor = object : Interceptor {
             override fun intercept(chain: Interceptor.Chain): Response {
                 val original = chain.request()
@@ -51,12 +46,10 @@ object ServiceLocator {
             .addInterceptor(rapidApiInterceptor)
             .build()
 
-        // ---------- Moshi (JSON) ----------
         val moshi = Moshi.Builder()
             .addLast(KotlinJsonAdapterFactory())
             .build()
 
-        // ---------- Retrofit ----------
         val api = Retrofit.Builder()
             .baseUrl(BASE_URL)
             .client(httpClient)
@@ -64,7 +57,6 @@ object ServiceLocator {
             .build()
             .create(ClimbingApiService::class.java)
 
-        // ---------- Repository ----------
         repository = ClimbingRepository(
             sessionDao = db.sessionDao(),
             routeDao = db.routeDao(),

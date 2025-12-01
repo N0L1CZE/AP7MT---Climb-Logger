@@ -15,18 +15,23 @@ data class AreasUiState(
     val error: String? = null
 )
 
+/**
+ * ViewModel pro obrazovku s hiking trasami z TrailAPI.
+ */
 class AreasViewModel : ViewModel() {
-
     private val repository = ServiceLocator.repository
 
     private val _uiState = MutableStateFlow(AreasUiState())
     val uiState: StateFlow<AreasUiState> = _uiState.asStateFlow()
 
-    fun loadAreas() {
+    /**
+     * Načte oblasti pro dané souřadnice.
+     */
+    fun loadAreas(lat: Double, lon: Double, state: String?) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
-                val data = repository.getAreas()
+                val data = repository.getAreas(lat, lon, state)
                 _uiState.value = AreasUiState(
                     isLoading = false,
                     areas = data,

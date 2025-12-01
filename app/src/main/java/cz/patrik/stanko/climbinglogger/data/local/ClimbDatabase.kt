@@ -5,7 +5,7 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [ClimbSession::class, ClimbRoute::class],
-    version = 1
+    version = 2
 )
 abstract class ClimbDatabase : RoomDatabase() {
     abstract fun sessionDao(): SessionDao

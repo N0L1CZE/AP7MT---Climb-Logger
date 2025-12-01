@@ -10,7 +10,7 @@ import cz.patrik.stanko.climbinglogger.data.remote.TrailPlaceRaw
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Repository – lokální DB (Room) + vzdálené TrailAPI (hiking místa).
+ * Repository – lokální DB (Room) + TrailAPI.
  */
 class ClimbingRepository(
     private val sessionDao: SessionDao,
@@ -18,18 +18,41 @@ class ClimbingRepository(
     private val api: ClimbingApiService
 ) {
 
-    // ------- Lokální log session / cest -------
+    // ------- Sessions (hiking log) -------
 
     fun getSessions(): Flow<List<ClimbSession>> = sessionDao.getAllSessions()
 
-    suspend fun addSession(date: String, locationName: String, isOutdoor: Boolean) {
+    suspend fun getSession(id: Long): ClimbSession? =
+        sessionDao.getSessionById(id)
+
+    suspend fun addSession(
+        title: String,
+        date: String,
+        durationMinutes: Int?,
+        notes: String?,
+        photoUri: String?,
+        locationName: String?
+    ): Long {
         val session = ClimbSession(
+            title = title,
             date = date,
-            locationName = locationName,
-            isOutdoor = isOutdoor
+            durationMinutes = durationMinutes,
+            notes = notes,
+            photoUri = photoUri,
+            locationName = locationName
         )
-        sessionDao.insertSession(session)
+        return sessionDao.insertSession(session)
     }
+
+    suspend fun updateSession(session: ClimbSession) {
+        sessionDao.updateSession(session)
+    }
+
+    suspend fun deleteSession(session: ClimbSession) {
+        sessionDao.deleteSession(session)
+    }
+
+    // ------- Routes (pokud je chceš používat) -------
 
     fun getRoutesForSession(sessionId: Long): Flow<List<ClimbRoute>> =
         routeDao.getRoutesForSession(sessionId)
@@ -58,22 +81,24 @@ class ClimbingRepository(
     // ------- Hiking místa z TrailAPI -------
 
     /**
-     * Načte hiking místa z TrailAPI.
+     * Načte hiking místa z TrailAPI podle zadaných souřadnic.
      *
-     * Pro jednoduchost používáme natvrdo souřadnice někde u San Francisca.
-     * Můžeš si je klidně změnit na jinou oblast.
+     * @param lat  šířka
+     * @param lon  délka
+     * @param state např. "California" (může být null)
      */
-    suspend fun getAreas(): List<ClimbingAreaDto> {
-        // souřadnice – můžeš změnit na co chceš
-        val lat = 37.7749
-        val lon = -122.4194
+    suspend fun getAreas(
+        lat: Double,
+        lon: Double,
+        state: String?
+    ): List<ClimbingAreaDto> {
 
         val raw: Map<String, TrailPlaceRaw> = api.getHikingPlaces(
             lat = lat,
             lon = lon,
             radius = 50,
             limit = 20,
-            state = "California"
+            state = state
         )
 
         return raw.map { (id, place) ->
