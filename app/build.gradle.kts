@@ -7,7 +7,6 @@ plugins {
     id("org.jetbrains.kotlin.kapt")
 }
 
-// načtení local.properties (rapidapiKey)
 val localProperties = Properties().apply {
     val file = rootDir.resolve("local.properties")
     if (file.exists()) {
@@ -17,7 +16,7 @@ val localProperties = Properties().apply {
 
 android {
     namespace = "cz.patrik.stanko.climbinglogger"
-    compileSdk = 34  // klidně 34, 35, 36 – jak máš v projektu
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "cz.patrik.stanko.climbinglogger"
@@ -28,7 +27,6 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // 👇 TADY se klíč z local.properties dostane do BuildConfig.RAPIDAPI_KEY
         val rapidApiKey = localProperties.getProperty("rapidapiKey") ?: ""
         buildConfigField("String", "RAPIDAPI_KEY", "\"$rapidApiKey\"")
     }
@@ -50,13 +48,21 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
+
     buildFeatures {
         compose = true
-        buildConfig = true // 👈 pro jistotu explicitně zapneme
+        buildConfig = true
+    }
+
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
     }
 }
 
 dependencies {
+    // základ z template
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -74,22 +80,27 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
-    implementation("io.coil-kt:coil-compose:2.6.0")
-
+    // Rozšířené ikony
     implementation("androidx.compose.material:material-icons-extended")
 
+    // Navigation Compose
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
-
+    // Room
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     kapt("androidx.room:room-compiler:2.6.1")
 
+    // Retrofit + Moshi
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-moshi:2.9.0")
     implementation("com.squareup.moshi:moshi-kotlin:1.15.0")
 
+    // Coroutines / ViewModel
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.4")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+
+    // Coil – obrázky (fotka výletu)
+    implementation("io.coil-kt:coil-compose:2.6.0")
 }
